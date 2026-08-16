@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { levels, getRandomLevels } from "../data/levels";
 
 export default function FlagGame() {
@@ -12,14 +12,46 @@ export default function FlagGame() {
 
   const [svgContent, setSvgContent] = useState<string>("");
   const [originalSvgContent, setOriginalSvgContent] = useState<string>("");
+  
   const [hue, setHue] = useState(180);
   const [saturation, setSaturation] = useState(50);
   const [lightness, setLightness] = useState(50);
 
+  // Ref per memorizzare i valori correnti senza ritardi
+  const colorRef = useRef({ h: 180, s: 50, l: 50 });
+  const flagContainerRef = useRef<HTMLDivElement>(null);
+  const satSliderRef = useRef<HTMLDivElement>(null);
+  const lightSliderRef = useRef<HTMLDivElement>(null);
+
   const [result, setResult] = useState<{ score: string } | null>(null);
   const [roundScores, setRoundScores] = useState<number[]>([]);
 
-  const currentColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  // Aggiornamento DOM ad altissime prestazioni per mobile
+  const updateDynamicStyles = useCallback((h: number, s: number, l: number) => {
+    requestAnimationFrame(() => {
+      const colorString = `hsl(${h}, ${s}%, ${l}%)`;
+      if (flagContainerRef.current) {
+        flagContainerRef.current.style.setProperty("--dynamic-color", colorString);
+      }
+      if (satSliderRef.current) {
+        satSliderRef.current.style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+      }
+      if (lightSliderRef.current) {
+        lightSliderRef.current.style.background = `linear-gradient(to right, black, hsl(${h}, ${s}%, 50%), white)`;
+      }
+    });
+  }, []);
+
+  const setRandomColors = () => {
+    const h = Math.floor(Math.random() * 361);
+    const s = Math.floor(Math.random() * 71) + 30;
+    const l = Math.floor(Math.random() * 51) + 30;
+    colorRef.current = { h, s, l };
+    setHue(h);
+    setSaturation(s);
+    setLightness(l);
+    updateDynamicStyles(h, s, l);
+  };
 
   const startGame = (count: number) => {
     const chosen = count >= levels.length ? levels : getRandomLevels(count);
@@ -27,11 +59,7 @@ export default function FlagGame() {
     setCurrentIdx(0);
     setRoundScores([]);
     setGameState("game");
-    // COLORI CASUALI DI PARTENZA
-    setHue(Math.floor(Math.random() * 361));
-    setSaturation(Math.floor(Math.random() * 71) + 30); // Tra 30 e 100
-    setLightness(Math.floor(Math.random() * 51) + 30); // Tra 30 e 80
-    
+    setRandomColors();
     setResult(null);
   };
 
@@ -71,11 +99,11 @@ export default function FlagGame() {
             setSvgContent(rawSvg);
           }
         } catch (e) {
-          console.error("Errore nel parsing SVG:", e);
+          console.error("Errore parsing SVG:", e);
           setSvgContent(rawSvg);
         }
       })
-      .catch((err) => console.error("Errore nel caricamento del file SVG:", err));
+      .catch((err) => console.error("Errore caricamento SVG:", err));
   }, [gameState, level]);
 
   useEffect(() => {
@@ -112,6 +140,12 @@ export default function FlagGame() {
       .catch(() => setOriginalSvgContent(""));
   }, [gameState, level]);
 
+  useEffect(() => {
+    if (gameState === "game") {
+      updateDynamicStyles(hue, saturation, lightness);
+    }
+  }, [gameState, svgContent, updateDynamicStyles, hue, saturation, lightness]);
+
   const hslToRgb = (h: number, s: number, l: number) => {
     s /= 100;
     l /= 100;
@@ -121,7 +155,6 @@ export default function FlagGame() {
     return [255 * f(0), 255 * f(8), 255 * f(4)];
   };
 
-  // SISTEMA DI VALUTAZIONE PIÙ PERMISSIVO
   const handleVerify = () => {
     const [r1, g1, b1] = hslToRgb(hue, saturation, lightness);
     const [r2, g2, b2] = hslToRgb(level.targetHsl.h, level.targetHsl.s, level.targetHsl.l);
@@ -130,10 +163,7 @@ export default function FlagGame() {
     const maxDistance = 441.67;
 
     const errorRatio = distance / maxDistance;
-
-    // Portando l'esponente a 0.85 (rispetto al 0.65 di prima), la penalità si riduce 
-    // e i punteggi alti (>95%) saranno molto più facili da raggiungere.
-    const penalty = Math.pow(errorRatio, 0.95) * 100;
+    const penalty = Math.pow(errorRatio, 0.85) * 100;
     const scoreVal = Math.max(0, Math.min(100, 100 - penalty));
 
     const numericScore = parseFloat(scoreVal.toFixed(1));
@@ -144,12 +174,7 @@ export default function FlagGame() {
   const nextLevel = () => {
     if (currentIdx < selectedLevels.length - 1) {
       setCurrentIdx((prev) => prev + 1);
-      
-      // NUOVI COLORI CASUALI PER IL LIVELLO SUCCESSIVO
-      setHue(Math.floor(Math.random() * 361));
-      setSaturation(Math.floor(Math.random() * 71) + 30);
-      setLightness(Math.floor(Math.random() * 51) + 30);
-      
+      setRandomColors();
       setResult(null);
     } else {
       setGameState("summary");
@@ -159,7 +184,7 @@ export default function FlagGame() {
   if (gameState === "home") {
     return (
       <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none font-sans border border-stone-200">
-        <h1 className="text-3xl font-black text-slate-900 mb-2 text-center">Color Match: Regioni d'Italia</h1>
+        <h1 className="text-3xl font-black text-slate-900 mb-2 text-center">Color Match: Regioni</h1>
         <p className="text-sm text-slate-600 mb-8 text-center">Seleziona la modalità di gioco:</p>
 
         <div className="flex flex-col gap-4 w-full">
@@ -167,19 +192,19 @@ export default function FlagGame() {
             onClick={() => startGame(5)}
             className="py-4 bg-[#549EFA] text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all"
           >
-            5 Regioni
+            5 Regioni 🇮🇹
           </button>
           <button
             onClick={() => startGame(10)}
             className="py-4 bg-[#4BE38A] text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all"
           >
-            10 Regioni 
+            10 Regioni 🇮🇹
           </button>
           <button
             onClick={() => startGame(20)}
             className="py-4 bg-[#F39C12] text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all"
           >
-            Tutte / 20 Regioni
+            Tutte / 20 Regioni 🇮🇹
           </button>
         </div>
       </div>
@@ -213,7 +238,7 @@ export default function FlagGame() {
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none font-sans border border-stone-200">
+    <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none font-sans border border-stone-200 touch-pan-y">
       
       {/* HEADER */}
       <div className="flex justify-between items-center w-full mb-3">
@@ -239,17 +264,13 @@ export default function FlagGame() {
       {/* CONTAINER BANDIERA INTERATTIVA */}
       <div className="w-full flex justify-center mb-6">
         <div
+          ref={flagContainerRef}
           className="w-full h-52 rounded-xl shadow-md overflow-hidden border-2 border-black/10 flex items-center justify-center bg-white p-2"
-          style={
-            {
-              [`--dynamic-color`]: currentColor,
-            } as React.CSSProperties
-          }
         >
-         <style>{`
+          <style>{`
             #${level.targetId}, .${level.targetId} {
-              fill: var(--dynamic-color) !important;
-              stroke: var(--dynamic-color) !important;
+              fill: var(--dynamic-color, #808080) !important;
+              stroke: var(--dynamic-color, #808080) !important;
               fill-opacity: 1 !important;
               stroke-opacity: 1 !important;
             }
@@ -262,7 +283,7 @@ export default function FlagGame() {
               display: block !important;
               margin: auto !important;
             }
-         `}</style>
+          `}</style>
 
           <div
             className="flag-wrapper w-full h-full flex items-center justify-center overflow-hidden"
@@ -286,21 +307,24 @@ export default function FlagGame() {
             max="360"
             disabled={!!result}
             value={hue}
-            onChange={(e) => setHue(Number(e.target.value))}
-            className="absolute w-full opacity-0 cursor-pointer h-full z-10"
+            onInput={(e) => {
+              const val = Number((e.target as HTMLInputElement).value);
+              setHue(val);
+              colorRef.current.h = val;
+              updateDynamicStyles(val, colorRef.current.s, colorRef.current.l);
+            }}
+            className="absolute w-full opacity-0 cursor-pointer h-full z-10 touch-none"
           />
           <div
-            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute transition-[left] duration-75"
+            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute"
             style={{ left: `calc(${(hue / 360) * 100}% - 14px)` }}
           />
         </div>
 
         {/* Slider 2: Saturation */}
         <div
+          ref={satSliderRef}
           className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner"
-          style={{
-            background: `linear-gradient(to right, hsl(${hue}, 0%, ${lightness}%), hsl(${hue}, 100%, ${lightness}%))`,
-          }}
         >
           <input
             type="range"
@@ -308,21 +332,24 @@ export default function FlagGame() {
             max="100"
             disabled={!!result}
             value={saturation}
-            onChange={(e) => setSaturation(Number(e.target.value))}
-            className="absolute w-full opacity-0 cursor-pointer h-full z-10"
+            onInput={(e) => {
+              const val = Number((e.target as HTMLInputElement).value);
+              setSaturation(val);
+              colorRef.current.s = val;
+              updateDynamicStyles(colorRef.current.h, val, colorRef.current.l);
+            }}
+            className="absolute w-full opacity-0 cursor-pointer h-full z-10 touch-none"
           />
           <div
-            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute transition-[left] duration-75"
+            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute"
             style={{ left: `calc(${saturation}% - 14px)` }}
           />
         </div>
 
         {/* Slider 3: Lightness */}
         <div
+          ref={lightSliderRef}
           className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner"
-          style={{
-            background: `linear-gradient(to right, black, hsl(${hue}, ${saturation}%, 50%), white)`,
-          }}
         >
           <input
             type="range"
@@ -330,11 +357,16 @@ export default function FlagGame() {
             max="100"
             disabled={!!result}
             value={lightness}
-            onChange={(e) => setLightness(Number(e.target.value))}
-            className="absolute w-full opacity-0 cursor-pointer h-full z-10"
+            onInput={(e) => {
+              const val = Number((e.target as HTMLInputElement).value);
+              setLightness(val);
+              colorRef.current.l = val;
+              updateDynamicStyles(colorRef.current.h, colorRef.current.s, val);
+            }}
+            className="absolute w-full opacity-0 cursor-pointer h-full z-10 touch-none"
           />
           <div
-            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute transition-[left] duration-75"
+            className="w-7 h-7 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute"
             style={{ left: `calc(${lightness}% - 14px)` }}
           />
         </div>
@@ -358,7 +390,7 @@ export default function FlagGame() {
               </div>
             </div>
 
-            {/* MOSTRA LA BANDIERA UFFICIALE IN BASSO */}
+            {/* BANDIERA UFFICIALE */}
             <div className="flex flex-col gap-1 w-full">
               <span className="text-xs font-bold text-slate-400 uppercase">Bandiera Ufficiale:</span>
               <div className="w-full h-32 rounded-lg border border-black/20 overflow-hidden bg-white flex items-center justify-center p-2">
