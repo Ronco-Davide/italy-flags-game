@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useId } from "react";
-import { levels } from "../data/levels";
+import React, { useState, useEffect, useRef, useId, useMemo } from "react";
+import confetti from "canvas-confetti";
+import { levels, Level } from "../data/levels";
 
-// Funzione interna per estrarre livelli casuali senza dipendere da import esterni
-function pickRandomLevels<T>(array: T[], count: number): T[] {
+function pickRandomLevels(array: Level[], count: number): Level[] {
   const shuffled = [...array].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
@@ -12,7 +12,7 @@ function pickRandomLevels<T>(array: T[], count: number): T[] {
 export default function FlagGame() {
   const componentId = useId().replace(/:/g, "");
   const [gameState, setGameState] = useState<"home" | "game" | "summary">("home");
-  const [selectedLevels, setSelectedLevels] = useState<typeof levels>([]);
+  const [selectedLevels, setSelectedLevels] = useState<Level[]>([]);
   const [currentMode, setCurrentMode] = useState<5 | 10 | 20>(5);
 
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -21,9 +21,9 @@ export default function FlagGame() {
   const [svgContent, setSvgContent] = useState<string>("");
   const [originalSvgContent, setOriginalSvgContent] = useState<string>("");
 
-  // Modali in alto
   const [showHelp, setShowHelp] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Record salvati in localStorage (5, 10, 20 regioni)
   const [highScores, setHighScores] = useState<{ [key: number]: number | null }>({
@@ -32,38 +32,44 @@ export default function FlagGame() {
     20: null,
   });
 
-  // Risultato e cronologia del round corrente
   const [result, setResult] = useState<{ score: string } | null>(null);
   const [roundScores, setRoundScores] = useState<{ name: string; score: number }[]>([]);
 
-  // Valori colore gestiti per massima fluidità
   const [hue, setHue] = useState(180);
   const [saturation, setSaturation] = useState(50);
   const [lightness, setLightness] = useState(50);
 
-  // Riferimenti per aggiornare lo stile al volo durante il drag
   const flagContainerRef = useRef<HTMLDivElement>(null);
   const currentColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 
-  // Carica i record da localStorage
+  // Estrae casualmente 1 dei 3 funFact disponibili per il livello corrente
+  const currentFunFact = useMemo(() => {
+    if (!currentLevel?.funFacts?.length) return null;
+    const randomIndex = Math.floor(Math.random() * currentLevel.funFacts.length);
+    return currentLevel.funFacts[randomIndex];
+  }, [currentLevel, currentIdx]);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("flag_game_highscores");
-      if (saved) {
-        setHighScores(JSON.parse(saved));
-      }
+      if (saved) setHighScores(JSON.parse(saved));
     } catch {
-      // Ignora errori di parsing o SSR
+      // Ignora errori SSR
     }
   }, []);
 
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 70,
+      spread: 60,
+      origin: { y: 0.7 },
+    });
+  };
+
   const setRandomColors = () => {
-    const h = Math.floor(Math.random() * 361);
-    const s = Math.floor(Math.random() * 71) + 30;
-    const l = Math.floor(Math.random() * 51) + 30;
-    setHue(h);
-    setSaturation(s);
-    setLightness(l);
+    setHue(Math.floor(Math.random() * 361));
+    setSaturation(Math.floor(Math.random() * 71) + 30);
+    setLightness(Math.floor(Math.random() * 51) + 30);
   };
 
   const startGame = (count: 5 | 10 | 20) => {
@@ -74,10 +80,11 @@ export default function FlagGame() {
     setRoundScores([]);
     setGameState("game");
     setResult(null);
+    setCopied(false);
     setRandomColors();
   };
 
-  // Parser SVG Bandiera del gioco
+  // Parser SVG Interattivo
   useEffect(() => {
     if (gameState !== "game" || !currentLevel) return;
 
@@ -104,9 +111,6 @@ export default function FlagGame() {
             svgEl.setAttribute("height", "100%");
             svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
             svgEl.style.display = "block";
-            svgEl.style.maxWidth = "100%";
-            svgEl.style.maxHeight = "100%";
-
             setSvgContent(svgEl.outerHTML);
           } else {
             setSvgContent(rawSvg);
@@ -118,7 +122,7 @@ export default function FlagGame() {
       .catch(() => setSvgContent(""));
   }, [gameState, currentLevel]);
 
-  // Caricamento Bandiera originale intatta
+  // Caricamento Bandiera originale
   useEffect(() => {
     if (gameState !== "game" || !currentLevel) return;
 
@@ -172,10 +176,11 @@ export default function FlagGame() {
     const numericScore = parseFloat(scoreVal.toFixed(1));
     setResult({ score: numericScore.toFixed(1) });
 
+    if (numericScore >= 95) triggerConfetti();
+
     const updatedScores = [...roundScores, { name: currentLevel.title, score: numericScore }];
     setRoundScores(updatedScores);
 
-    // Salvataggio record se è l'ultimo livello
     if (currentIdx === selectedLevels.length - 1) {
       const avg = parseFloat(
         (updatedScores.reduce((acc, curr) => acc + curr.score, 0) / updatedScores.length).toFixed(1)
@@ -187,7 +192,7 @@ export default function FlagGame() {
         try {
           localStorage.setItem("flag_game_highscores", JSON.stringify(newHighs));
         } catch {
-          // Ignora errori di salvataggio
+          // Ignora errori localStorage
         }
       }
     }
@@ -200,10 +205,37 @@ export default function FlagGame() {
       setResult(null);
     } else {
       setGameState("summary");
+      triggerConfetti();
     }
   };
 
-  // --- MODALI ---
+  const getScoreEmoji = (score: number) => {
+    if (score >= 95) return "🟢";
+    if (score >= 80) return "🟡";
+    if (score >= 60) return "🟠";
+    return "🔴";
+  };
+
+  const handleShare = () => {
+    const avg =
+      roundScores.length > 0
+        ? (roundScores.reduce((a, b) => a + b.score, 0) / roundScores.length).toFixed(1)
+        : "0.0";
+
+    const rows = roundScores
+      .map((item, idx) => `${idx + 1}. ${getScoreEmoji(item.score)} ${item.score}% (${item.name})`)
+      .join("\n");
+
+    const shareText = `🇮🇹 Color Match: Regioni (${currentMode} Regioni)\nMedia: ${avg}% 🏆\n\n${rows}\n\nGioca anche tu: ${window.location.origin}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+    }
+  };
+
   const renderHelpModal = () => {
     if (!showHelp) return null;
     return (
@@ -219,15 +251,13 @@ export default function FlagGame() {
             </button>
           </div>
           <div className="text-sm text-slate-700 flex flex-col gap-2.5 leading-relaxed">
-            <p>
-              🎯 <strong>Obiettivo:</strong> Ricrea il colore mancante della bandiera regionale usando i 3 slider.
-            </p>
+            <p>🎯 <strong>Obiettivo:</strong> Ricrea il colore mancante della bandiera regionale usando i 3 slider.</p>
             <div className="bg-white p-3 rounded-xl border border-black/10 flex flex-col gap-1.5 text-xs">
               <div>🎨 <strong>1° Slider (Tonalità):</strong> Cambia il colore base.</div>
-              <div>💧 <strong>2° Slider (Saturazione):</strong> Regola l&apos;intensità del colore.</div>
+              <div>💧 <strong>2° Slider (Saturazione):</strong> Regola l&apos;intensità da neutro a vivace.</div>
               <div>☀️ <strong>3° Slider (Luminosità):</strong> Regola la luce da nero a bianco.</div>
             </div>
-            <p>Più ti avvicini al colore reale della bandiera ufficiale, più alto sarà il punteggio!</p>
+            <p>Al termine di ogni round scopri la bandiera reale e la sua storia araldica!</p>
           </div>
           <button
             onClick={() => setShowHelp(false)}
@@ -361,9 +391,9 @@ export default function FlagGame() {
         {renderStatsModal()}
 
         <h2 className="text-3xl font-black text-slate-900 mb-1 text-center">Partita Finita! 🏆</h2>
-        <p className="text-sm text-slate-600 mb-6 text-center">Modalità: {currentMode} Regioni</p>
+        <p className="text-sm text-slate-600 mb-5 text-center">Modalità: {currentMode} Regioni</p>
 
-        <div className="bg-white border-2 border-black rounded-2xl p-6 w-full flex flex-col items-center justify-center shadow-[0_4px_0_0_#000] mb-4">
+        <div className="bg-white border-2 border-black rounded-2xl p-5 w-full flex flex-col items-center justify-center shadow-[0_4px_0_0_#000] mb-4">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Media Finale</span>
           <div className="text-5xl font-black text-slate-900">{averageScore}%</div>
           {isNewRecord && (
@@ -373,12 +403,22 @@ export default function FlagGame() {
           )}
         </div>
 
+        {/* PULSANTE CONDIVISIONE WORDLE */}
+        <button
+          onClick={handleShare}
+          className={`w-full py-3.5 mb-3 text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
+            copied ? "bg-[#4BE38A]" : "bg-[#FFD166]"
+          }`}
+        >
+          {copied ? "Risultato Copiato! 📋" : "Condividi Risultato 📤"}
+        </button>
+
         <div className="flex gap-2 w-full mb-3">
           <button
             onClick={() => setShowStats(true)}
             className="flex-1 py-3 bg-white text-black font-bold text-sm rounded-xl border-2 border-black shadow-[0_3px_0_0_#000] active:translate-y-0.5 active:shadow-none"
           >
-            Vedi Dettagli 📋
+            Dettagli 📋
           </button>
           <button
             onClick={() => startGame(currentMode)}
@@ -390,7 +430,7 @@ export default function FlagGame() {
 
         <button
           onClick={() => setGameState("home")}
-          className="w-full py-3.5 bg-[#549EFA] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none"
+          className="w-full py-3 bg-[#549EFA] text-black font-black text-sm rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000] active:translate-y-1 active:shadow-none"
         >
           Torna alla Home 🏠
         </button>
@@ -404,7 +444,6 @@ export default function FlagGame() {
       {renderHelpModal()}
       {renderStatsModal()}
 
-      {/* HEADER */}
       <div className="flex justify-between items-center w-full mb-3">
         <span
           onClick={() => setGameState("home")}
@@ -422,10 +461,8 @@ export default function FlagGame() {
         </div>
       </div>
 
-      {/* TITOLO REGIONE */}
       <h2 className="text-2xl font-black text-slate-900 mb-5">{currentLevel.title}</h2>
 
-      {/* CONTAINER BANDIERA INTERATTIVA */}
       <div className="w-full flex justify-center mb-6">
         <div
           ref={flagContainerRef}
@@ -462,9 +499,8 @@ export default function FlagGame() {
         </div>
       </div>
 
-      {/* I 3 SLIDER FLUIDI CON TOUCH OTTIMIZZATO */}
+      {/* 3 SLIDER */}
       <div className="flex flex-col gap-4 w-full mb-6">
-        {/* Slider 1: Hue */}
         <div
           className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner"
           style={{
@@ -487,7 +523,6 @@ export default function FlagGame() {
           />
         </div>
 
-        {/* Slider 2: Saturation */}
         <div
           className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner"
           style={{
@@ -509,7 +544,6 @@ export default function FlagGame() {
           />
         </div>
 
-        {/* Slider 3: Lightness */}
         <div
           className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner"
           style={{
@@ -532,7 +566,7 @@ export default function FlagGame() {
         </div>
       </div>
 
-      {/* AZIONI E RISULTATO */}
+      {/* AZIONI E SCHEDA POST-RISPOSTA */}
       {!result ? (
         <button
           onClick={handleVerify}
@@ -550,10 +584,9 @@ export default function FlagGame() {
               </div>
             </div>
 
-            {/* BANDIERA UFFICIALE */}
             <div className="flex flex-col gap-1 w-full">
               <span className="text-xs font-bold text-slate-400 uppercase">Bandiera Ufficiale:</span>
-              <div className="w-full h-32 rounded-lg border border-black/20 overflow-hidden bg-white flex items-center justify-center p-2">
+              <div className="w-full h-28 rounded-lg border border-black/20 overflow-hidden bg-white flex items-center justify-center p-2">
                 <style>{`
                   .original-flag-container svg {
                     width: 100% !important;
@@ -571,6 +604,14 @@ export default function FlagGame() {
                 />
               </div>
             </div>
+
+            {/* CURIOSITÀ STORICA POST-ROUND CASUALE */}
+            {currentFunFact && (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-950 flex flex-col gap-1 text-left">
+                <span className="font-bold flex items-center gap-1">💡 Lo sapevi?</span>
+                <p className="leading-snug text-slate-700">{currentFunFact}</p>
+              </div>
+            )}
           </div>
 
           <button
