@@ -13,7 +13,7 @@ export const levels: Level[] = [
     title: "Abruzzo",
     svgFile: "/flags/Flag_of_Abruzzo.svg",
     targetId: "target-color",
-    targetHsl: { h: 215, s: 80, l: 40 }, // Blu campo
+    targetHsl: { h: 87, s: 63, l: 44 }, // Verde fascia
     funFacts: [
       "I tre colori dello scudo rappresentano la neve del Gran Sasso (bianco), i boschi dell'Appennino (verde) e il Mar Adriatico (blu).",
       "La fascia tricolore nello scudo è inclinata in senso diagonale discendente, richiamando la conformazione orografica della regione.",
@@ -25,7 +25,7 @@ export const levels: Level[] = [
     title: "Basilicata",
     svgFile: "/flags/Flag_of_Basilicata.svg",
     targetId: "target-color",
-    targetHsl: { h: 215, s: 75, l: 45 }, // Blu campo
+    targetHsl: { h: 0, s: 0, l: 88 }, // Scudo argento Basilicata
     funFacts: [
       "Le quattro onde azzurre al centro dello scudo simboleggiano i fiumi principali della regione: Bradano, Basento, Agri e Sinni.",
       "Il fondo blu della bandiera richiama le due coste della regione, bagnata sia dallo Ionio che dal Tirreno.",
@@ -133,7 +133,7 @@ export const levels: Level[] = [
     title: "Molise",
     svgFile: "/flags/Flag_of_Molise.svg",
     targetId: "target-color",
-    targetHsl: { h: 215, s: 75, l: 45 }, // Blu campo
+    targetHsl: { h: 201, s: 100, l: 40 }, // Blu bandiera Molise (#0085CE)
     funFacts: [
       "La stella a otto punte nello scudo rappresenta le otto confederazioni dell'antico popolo fiero e guerriero dei Sanniti.",
       "La banda diagonale rossa è un richiamo allo stemma medievale della nobile famiglia dei Conti di Molise.",
@@ -157,7 +157,7 @@ export const levels: Level[] = [
     title: "Puglia",
     svgFile: "/flags/Flag_of_Apulia.svg",
     targetId: "target-color",
-    targetHsl: { h: 140, s: 65, l: 40 }, // Verde fascia
+    targetHsl: { h: 359, s: 80, l: 43 }, // Rosso campo Puglia
     funFacts: [
       "L'albero di olivo al centro simboleggia l'agricoltura, la pace e le secolari distese di ulivi tipiche del paesaggio pugliese.",
       "I sei cerchi dorati sopra l'albero rappresentano le sei province della regione: Bari, BAT, Brindisi, Foggia, Lecce e Taranto.",
