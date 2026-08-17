@@ -7,7 +7,7 @@
 <g>
 	<rect id="rect8128" x="0" fill-rule="evenodd" clip-rule="evenodd" fill="#FF0000" width="900" height="600"/>
 	<rect id="rect8130" x="0" fill-rule="evenodd" clip-rule="evenodd" fill="#009C31" width="300" height="600"/>
-	<rect id="target-color" x="600" fill-rule="evenodd" clip-rule="evenodd" width="300" height="600"/>
+	<rect id="rect8132" x="600" fill-rule="evenodd" clip-rule="evenodd" fill="#009CCE" width="300" height="600"/>
 </g>
 <g>
 	<path fill-rule="evenodd" clip-rule="evenodd" fill="#FFFFFF" d="M311.321,329.892V179.708h-0.012l0.005-2.684

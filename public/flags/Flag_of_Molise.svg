@@ -51,14 +51,13 @@
      inkscape:current-layer="svg2"
      showgrid="false"
      inkscape:window-maximized="1" />
-
-   <rect
-      id="target-color"
-      style="fill-rule:evenodd;stroke:none"
-      width="750"
-      height="500"
-      x="0"
-      y="0" />
+  <rect
+     style="fill:#0085ce;fill-opacity:1;fill-rule:evenodd;stroke:none"
+     id="rect3837"
+     width="750"
+     height="500"
+     x="0"
+     y="0" />
   <g
      transform="matrix(0.88562926,0,0,0.88399699,629.90343,83.02161)"
      style="font-size:37px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#fbffff;stroke-width:2.26036549;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"

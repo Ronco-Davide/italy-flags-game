@@ -104,9 +104,9 @@
        id="g14354">
       <path
          sodipodi:nodetypes="ccccccsccccsccc"
-         style="opacity:1;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="opacity:1;fill:#036f3a;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="M 2.5,-0.03125 V 92.75 L 26,72.15625 v -45.6875 h 196 v 146.5 c 1e-5,55.19999 -42.8,99.99999 -98,100 -55.199988,0 -98,-44.80002 -98,-100 v -59.0625 H 2.5 v 64.0625 c 0,67.06799 54.432024,121.5 121.5,121.5 67.06801,0 121.50001,-54.43201 121.5,-121.5 v -178 z"
-         id="target-color"
+         id="rect1873"
          inkscape:connector-curvature="0" />
       <path
          style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:50;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1"

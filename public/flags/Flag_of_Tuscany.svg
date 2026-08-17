@@ -52,8 +52,10 @@
      height="432"
      width="648" />
   <path
-      id="target-color"
-      d="M0,67.37H648v44H0v216H648v44H0z" />
+     style="fill:#e30613;fill-opacity:1"
+     id="path1811"
+     d="M0,67.37H648v44H0v216H648v44H0z"
+     fill="#ce1021" />
   <g
      transform="matrix(2.0352446,0,0,2.0352446,229.85976,112.58922)"
      inkscape:label="A"
