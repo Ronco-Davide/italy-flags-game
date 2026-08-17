@@ -166,7 +166,6 @@ export const levels: Level[] = [
     targets: [
       { elementName: "Profilo", targetHsl: { h: 150, s: 100, l: 27 }, colors: ['#036f3a'] },
       { elementName: "Lettera M", targetHsl: { h: 0, s: 0, l: 0 }, colors: ['#000000'] },
-      { elementName: "Sfondo", targetHsl: { h: 0, s: 0, l: 100 }, colors: ['#ffffff'] }
     ],
     funFacts: [
       "Il picchio stilizzato richiama l'antico totem dei Piceni, popolazione italica guidata da un picchio durante la migrazione sacra (Ver Sacrum).",
@@ -196,7 +195,6 @@ export const levels: Level[] = [
     targets: [
       { elementName: "Sfondo della Croce", targetHsl: { h: 351, s: 85, l: 42 }, colors: ['#d5001d'] },
       { elementName: "Cornice e Lambello", targetHsl: { h: 220, s: 100, l: 25 }, colors: ['#01419c'] },
-      { elementName: "Croce", targetHsl: { h: 0, s: 0, l: 100 }, colors: ['#ffffff'] },
     ],
     funFacts: [
       "La bandiera riprende la storica insegna del Principe di Piemonte istituita da Amedeo VIII di Savoia nel 1424.",
