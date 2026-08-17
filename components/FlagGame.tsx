@@ -112,6 +112,7 @@ export default function FlagGame() {
   };
 
   const startDailyChallenge = () => {
+    if (dailyCompleted) return;
     setGameMode("daily");
     setRounds(getDailyRounds(levels, todayStr));
     setCurrentIdx(0);
@@ -351,15 +352,27 @@ export default function FlagGame() {
         <h1 className="text-3xl font-black text-slate-900 mb-1 text-center">Color Match: Regioni</h1>
         <p className="text-xs text-slate-500 mb-5 text-center">Indovina i colori ufficiali d&apos;Italia 🇮🇹</p>
         <div className="flex flex-col gap-3.5 w-full">
-          <button onClick={startDailyChallenge} className={`py-4 text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none flex justify-between items-center px-5 ${dailyCompleted ? "bg-[#FFE082]" : "bg-[#FFCA28]"}`}>
+        <button 
+            onClick={startDailyChallenge} 
+            disabled={!!dailyCompleted} // Disabilita nativamente il bottone
+            className={`py-4 text-black font-black text-lg rounded-2xl border-2 border-black flex justify-between items-center px-5 transition-all
+              ${dailyCompleted 
+                ? "bg-[#FFE082] opacity-70 cursor-not-allowed" // Stile disabilitato
+                : "bg-[#FFCA28] shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none" // Stile attivo
+              }`}
+          >
             <div className="flex items-center gap-2">
               <span>📅</span>
               <span className="text-left leading-tight">
                 <div>Sfida del Giorno</div>
-                <div className="text-[10px] font-normal text-slate-800 uppercase tracking-wider">Stesse Regioni Per Tutti</div>
+                <div className="text-[10px] font-normal text-slate-800 uppercase tracking-wider">
+                  {dailyCompleted ? "Torna domani!" : "Stesse Regioni Per Tutti"}
+                </div>
               </span>
             </div>
-            <span className="text-xs bg-black/10 px-2.5 py-1 rounded-full font-bold">{dailyCompleted ? `${dailyCompleted.score}% ✓` : "GIOCA"}</span>
+            <span className="text-xs bg-black/10 px-2.5 py-1 rounded-full font-bold">
+              {dailyCompleted ? `${dailyCompleted.score}% ✓` : "GIOCA"}
+            </span>
           </button>
           <div className="flex items-center my-1">
             <div className="flex-1 border-t border-slate-300" />
