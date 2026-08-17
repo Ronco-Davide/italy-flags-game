@@ -226,7 +226,6 @@ export const levels: Level[] = [
     svgFile: "Flag_of_Sardinia.svg",
     targets: [
       { elementName: "Croce", targetHsl: { h: 351, s: 85, l: 42 }, colors: ['#d80000'] },
-      { elementName: "Sfondo", targetHsl: { h: 0, s: 0, l: 100 }, colors: ['#ffffff'] },
     ],
     funFacts: [
       "La celebre bandiera dei 'Quattro Mori' raffigura quattro teste di sovrani saraceni sconfitti durante la Reconquista aragonese.",
@@ -242,7 +241,7 @@ export const levels: Level[] = [
       { elementName: "Triangolo in basso (Sinistra)", targetHsl: { h: 49, s: 100, l: 50 }, colors: ['#fff100'] },
       { elementName: "Triangolo in alto (Destra)", targetHsl: { h: 351, s: 85, l: 42 }, colors: ['#ec1b23'] },
       { elementName: "Trinacria", targetHsl: { h: 24, s: 100, l: 81 }, colors: ['#ffc8a0'] },
-      { elementName: "Spighe di Grano", targetHsl: { h: 41, s: 82, l: 57 }, colors: ['#ebb437', '#ebb432'] },
+      { elementName: "Dettagli", targetHsl: { h: 41, s: 82, l: 57 }, colors: ['#ebb437', '#ebb432'] },
     ],
     funFacts: [
       "I colori rosso e giallo simboleggiano l'unione dei comuni di Palermo e Corleone durante i Vespri Siciliani del 1282.",
