@@ -151,7 +151,7 @@ export const levels: Level[] = [
     svgFile: "Flag_of_Lombardy.svg",
     targets: [
       { elementName: "Sfondo", targetHsl: { h: 150, s: 100, l: 27 }, colors: ['#00a040'] },
-      { elementName: "Rosa Camuna", targetHsl: { h: 0, s: 0, l: 100 }, colors: ['#ffffff'] },
+      { elementName: "Rosa Camuna", targetHsl: { h: 0, s: 0, l: 100 }, colors: WHITES },
     ],
     funFacts: [
       "La figura centrale è la Rosa Camuna, antichissima incisione rupestre lasciata dai Camuni in Val Camonica nell'età del ferro.",
@@ -253,7 +253,7 @@ export const levels: Level[] = [
     svgFile: "Flag_of_Tuscany.svg",
     targets: [
       { elementName: "Fasce Orizzontali", targetHsl: { h: 0, s: 100, l: 42 }, colors: ['#e30613'] },
-      { elementName: "Sfondo", targetHsl: { h: 0, s: 0, l: 100 }, colors: ['#ffffff'] }
+      { elementName: "Sfondo", targetHsl: { h: 0, s: 0, l: 100 }, colors: WHITES }
     ],
     funFacts: [
       "Il cavallo alato Pegaso al centro fu scelto dal Comitato Toscano di Liberazione Nazionale durante la Resistenza nel 1944.",
