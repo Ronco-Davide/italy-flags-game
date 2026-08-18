@@ -2,10 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
 
-const inputDir = path.join(process.cwd(), 'public', 'flags-original');
+// 👉 CAMBIA QUI: punta alla cartella dove hai salvato gli stemmi della Serie A
+const inputDir = path.join(process.cwd(), 'public', 'serie-a');
+
+if (!fs.existsSync(inputDir)) {
+  console.error(`❌ Errore: cartella ${inputDir} non trovata.`);
+  process.exit(1);
+}
+
 const files = fs.readdirSync(inputDir).filter((f) => f.endsWith('.svg'));
 
-console.log(`=== COLORI ESTRATTI PER TUTTE LE BANDIERE ===\n`);
+console.log(`=== COLORI ESTRATTI PER GLI STEMMI SERIE A ===\n`);
 
 for (const file of files) {
   const content = fs.readFileSync(path.join(inputDir, file), 'utf-8');
