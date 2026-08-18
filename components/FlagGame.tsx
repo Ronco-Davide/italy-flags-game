@@ -179,7 +179,6 @@ export default function FlagGame() {
         const svgEl = doc.querySelector("svg");
 
         if (svgEl) {
-          // --- PARACADUTE DOM PER JUVENTUS E LOGHI RIBELLI ---
           // Se lo script non ha trovato la stringa da sostituire
           if (!modifiedSvg.includes("var(--dynamic-color)")) {
             const shapes = svgEl.querySelectorAll("path, polygon, rect, circle");
@@ -258,7 +257,7 @@ export default function FlagGame() {
     const lumDist = Math.abs(tL - uL);
 
     const totalError = (chromaDist * 0.60) + (lumDist * 0.40);
-    const penalty = Math.pow(totalError, 0.85) * 100;
+    const penalty = Math.pow(totalError, 0.95) * 100;
     
     const scoreVal = Math.max(0, Math.min(100, 100 - penalty));
     const numericScore = parseFloat(scoreVal.toFixed(1));
@@ -482,18 +481,23 @@ export default function FlagGame() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 w-full mb-6">
-            <div className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner px-1" style={{ background: "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)" }}>
-              <input type="range" min="0" max="360" value={hue} onChange={(e) => setHue(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-10 touch-none" />
-              <div className="w-6 h-6 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute" style={{ left: `calc(4px + ${(hue / 360)} * (100% - 32px))` }} />
+          <div className="flex flex-col gap-5 w-full mb-8 mt-2">
+            {/* Slider Tonalità */}
+            <div className="relative flex items-center h-[42px] rounded-full border-[3px] border-black shadow-inner" style={{ background: "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)" }}>
+              <input type="range" min="0" max="360" value={hue} onChange={(e) => setHue(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-20 touch-none" />
+              <div className="w-[46px] h-[46px] bg-white border-[3px] border-black rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.4)] pointer-events-none absolute z-10 top-1/2 -translate-y-1/2" style={{ left: `calc(${(hue / 360)} * (100% - 46px))` }} />
             </div>
-            <div className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner px-1" style={{ background: `linear-gradient(to right, hsl(${hue}, 0%, ${lightness}%), hsl(${hue}, 100%, ${lightness}%))` }}>
-              <input type="range" min="0" max="100" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-10 touch-none" />
-              <div className="w-6 h-6 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute" style={{ left: `calc(4px + ${(saturation / 100)} * (100% - 32px))` }} />
+
+            {/* Slider Saturazione */}
+            <div className="relative flex items-center h-[42px] rounded-full border-[3px] border-black shadow-inner" style={{ background: `linear-gradient(to right, hsl(${hue}, 0%, ${lightness}%), hsl(${hue}, 100%, ${lightness}%))` }}>
+              <input type="range" min="0" max="100" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-20 touch-none" />
+              <div className="w-[46px] h-[46px] bg-white border-[3px] border-black rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.4)] pointer-events-none absolute z-10 top-1/2 -translate-y-1/2" style={{ left: `calc(${(saturation / 100)} * (100% - 46px))` }} />
             </div>
-            <div className="relative flex items-center h-8 rounded-full border-2 border-black overflow-hidden shadow-inner px-1" style={{ background: `linear-gradient(to right, black, hsl(${hue}, ${saturation}%, 50%), white)` }}>
-              <input type="range" min="0" max="100" value={lightness} onChange={(e) => setLightness(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-10 touch-none" />
-              <div className="w-6 h-6 bg-white border-2 border-black rounded-full shadow pointer-events-none absolute" style={{ left: `calc(4px + ${(lightness / 100)} * (100% - 32px))` }} />
+
+            {/* Slider Luminosità */}
+            <div className="relative flex items-center h-[42px] rounded-full border-[3px] border-black shadow-inner" style={{ background: `linear-gradient(to right, black, hsl(${hue}, ${saturation}%, 50%), white)` }}>
+              <input type="range" min="0" max="100" value={lightness} onChange={(e) => setLightness(Number(e.target.value))} className="absolute inset-0 w-full opacity-0 cursor-pointer h-full z-20 touch-none" />
+              <div className="w-[46px] h-[46px] bg-white border-[3px] border-black rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.4)] pointer-events-none absolute z-10 top-1/2 -translate-y-1/2" style={{ left: `calc(${(lightness / 100)} * (100% - 46px))` }} />
             </div>
           </div>
 

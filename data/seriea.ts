@@ -294,7 +294,6 @@ export interface TargetElement {
       targets: [
         { elementName: "Scaglione", targetHsl: { h: 0, s: 0, l: 0 }, colors: ['#312c28', '#2a2723', ...BLACKS] },
         { elementName: "Corona Alloro", targetHsl: { h: 40, s: 37, l: 46 }, colors: ['#a0834a', '#a28349'] },
-        { elementName: "Sfondo Scudo", targetHsl: { h: 0, s: 0, l: 100 }, colors: WHITES },
       ],
       funFacts: [
         "Lo stemma riprende il simbolo della città di Udine: uno scudo con un 'capriolo' (la V rovesciata) nero in campo bianco.",
@@ -310,7 +309,6 @@ export interface TargetElement {
         { elementName: "Leone e Scritte", targetHsl: { h: 44, s: 27, l: 49 }, colors: ['#9e8c5c', '#917b4c'] },
         { elementName: "Fascia Destra", targetHsl: { h: 136, s: 40, l: 29 }, colors: ['#2c673c'] },
         { elementName: "Fascia Sinistra", targetHsl: { h: 22, s: 84, l: 56 }, colors: ['#ee732e', '#ea7125'] },
-        { elementName: "Sfondo Superiore", targetHsl: { h: 0, s: 0, l: 0 }, colors: BLACKS },
       ],
       funFacts: [
         "Lo stemma raffigura il Leone Alato di San Marco, celebre simbolo della Repubblica di Venezia.",
