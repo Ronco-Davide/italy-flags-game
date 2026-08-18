@@ -10,6 +10,7 @@ interface RoundConfig {
   target: TargetElement;
 }
 
+// Genera round giornalieri (sempre uguali a seconda della data)
 function getDailyRounds(array: Level[], dateStr: string): RoundConfig[] {
   let seed = 0;
   for (let i = 0; i < dateStr.length; i++) {
@@ -20,23 +21,27 @@ function getDailyRounds(array: Level[], dateStr: string): RoundConfig[] {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
   };
+
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(pseudoRandom() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+
   return copy.slice(0, 5).map((lvl) => {
     const targetIdx = Math.floor(pseudoRandom() * lvl.targets.length);
     return { level: lvl, target: lvl.targets[targetIdx] };
   });
 }
 
+// Estrae bandiere casuali e per ognuna SORTEGGIA un target interno a caso
 function pickRandomRounds(array: Level[], count: number): RoundConfig[] {
   const shuffledLevels = [...array];
   for (let i = shuffledLevels.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffledLevels[i], shuffledLevels[j]] = [shuffledLevels[j], shuffledLevels[i]];
   }
+
   return shuffledLevels.slice(0, Math.min(count, shuffledLevels.length)).map((lvl) => {
     const targetIdx = Math.floor(Math.random() * lvl.targets.length);
     return { level: lvl, target: lvl.targets[targetIdx] };
@@ -83,11 +88,6 @@ export default function FlagGame() {
   const flagContainerRef = useRef<HTMLDivElement>(null);
   const currentColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 
-  // === NUOVI STATI PER LA CLASSIFICA ===
-  const [playerName, setPlayerName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [leaderboardData, setLeaderboardData] = useState<any>(null);
-
   const currentFunFact = useMemo(() => {
     if (!currentLevel || !currentLevel.funFacts) return null;
     return currentLevel.funFacts[Math.floor(Math.random() * currentLevel.funFacts.length)];
@@ -96,22 +96,23 @@ export default function FlagGame() {
   useEffect(() => {
     try {
       const savedHighs = localStorage.getItem(`color_match_highscores_${activeCategory}`);
-      if (savedHighs) setHighScores(JSON.parse(savedHighs));
-      else setHighScores({ 5: null, 10: null, 20: null });
+      if (savedHighs) {
+        setHighScores(JSON.parse(savedHighs));
+      } else {
+        setHighScores({ 5: null, 10: null, 20: null });
+      }
 
       const savedDaily = localStorage.getItem(`color_match_daily_${activeCategory}`);
       if (savedDaily) {
         const parsed = JSON.parse(savedDaily);
-        if (parsed.date === todayStr) setDailyCompleted(parsed);
-        else setDailyCompleted(null);
+        if (parsed.date === todayStr) {
+          setDailyCompleted(parsed);
+        } else {
+          setDailyCompleted(null);
+        }
       } else {
         setDailyCompleted(null);
       }
-
-      // Recupera il nome inserito precedentemente, se esiste
-      const savedName = localStorage.getItem("colormatch_playername");
-      if (savedName) setPlayerName(savedName);
-
     } catch { }
   }, [todayStr, activeCategory]);
 
@@ -131,7 +132,6 @@ export default function FlagGame() {
     setRounds(getDailyRounds(currentDataset, todayStr));
     setCurrentIdx(0);
     setRoundScores([]);
-    setLeaderboardData(null); // Resetta i vecchi dati
     setGameState("game");
     setResult(null);
     setCopied(false);
@@ -149,6 +149,7 @@ export default function FlagGame() {
     setRandomColors();
   };
 
+  // IL MOTORE INFALLIBILE CON PARACADUTE DOM
   useEffect(() => {
     if (gameState !== "game" || !currentLevel || !currentTarget) return;
 
@@ -156,12 +157,18 @@ export default function FlagGame() {
       .then((res) => res.text())
       .then((rawSvg) => {
         let modifiedSvg = rawSvg;
+
         currentTarget.colors.forEach((color) => {
           const isHex = color.startsWith('#');
           const isWord = ['white', 'black', 'red', 'blue', 'green', 'yellow'].includes(color.toLowerCase());
+          
           let regexStr = color.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          if (isHex) regexStr = regexStr + "(?![0-9a-fA-F])";
-          else if (isWord) regexStr = "\\b" + regexStr + "\\b"; 
+          
+          if (isHex) {
+             regexStr = regexStr + "(?![0-9a-fA-F])";
+          } else if (isWord) {
+             regexStr = "\\b" + regexStr + "\\b"; 
+          }
           
           const regex = new RegExp(regexStr, "gi");
           modifiedSvg = modifiedSvg.replace(regex, "var(--dynamic-color)");
@@ -172,11 +179,15 @@ export default function FlagGame() {
         const svgEl = doc.querySelector("svg");
 
         if (svgEl) {
+          // Se lo script non ha trovato la stringa da sostituire
           if (!modifiedSvg.includes("var(--dynamic-color)")) {
             const shapes = svgEl.querySelectorAll("path, polygon, rect, circle");
             shapes.forEach((el) => {
               const fill = el.getAttribute("fill");
               const style = el.getAttribute("style") || "";
+              
+              // Se un elemento non ha colore, per il browser è Nero. 
+              // Se noi stiamo cercando di indovinare il Nero (l === 0), coloriamolo!
               const isImplicitBlack = !fill && !style.includes("fill");
               const isExplicitBlack = fill === "currentColor" || fill === "black";
               
@@ -194,6 +205,7 @@ export default function FlagGame() {
           svgEl.setAttribute("width", "100%");
           svgEl.setAttribute("height", "100%");
           svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
           setSvgContent(svgEl.outerHTML);
         } else {
           setSvgContent(modifiedSvg);
@@ -202,8 +214,10 @@ export default function FlagGame() {
       .catch(() => setSvgContent(""));
   }, [gameState, currentLevel, currentTarget, currentFolder]);
 
+  // Caricamento per la miniatura finale intatta
   useEffect(() => {
     if (gameState !== "game" || !currentLevel) return;
+
     fetch(`${currentFolder}/${currentLevel.svgFile}`)
       .then((res) => res.text())
       .then((rawSvg) => {
@@ -223,15 +237,19 @@ export default function FlagGame() {
 
   const handleVerify = () => {
     const target = currentTarget.targetHsl;
+
     const tL = target.l / 100;
     const uL = lightness / 100;
+
     const tC = (target.s / 100) * (1 - Math.abs(2 * tL - 1));
     const uC = (saturation / 100) * (1 - Math.abs(2 * uL - 1));
+
     const tH = target.h * (Math.PI / 180);
     const uH = hue * (Math.PI / 180);
 
     const tX = tC * Math.cos(tH);
     const tY = tC * Math.sin(tH);
+    
     const uX = uC * Math.cos(uH);
     const uY = uC * Math.sin(uH);
 
@@ -239,12 +257,13 @@ export default function FlagGame() {
     const lumDist = Math.abs(tL - uL);
 
     const totalError = (chromaDist * 0.60) + (lumDist * 0.40);
-    const penalty = Math.pow(totalError, 0.85) * 100;
+    const penalty = Math.pow(totalError, 0.95) * 100;
     
     const scoreVal = Math.max(0, Math.min(100, 100 - penalty));
     const numericScore = parseFloat(scoreVal.toFixed(1));
 
     setResult({ score: numericScore.toFixed(1) });
+
     if (numericScore >= 95) triggerConfetti();
 
     const updatedScores = [...roundScores, { name: currentLevel.title, targetName: currentTarget.elementName, score: numericScore }];
@@ -276,42 +295,6 @@ export default function FlagGame() {
     }
   };
 
-  // === FUNZIONE PER INVIARE IL PUNTEGGIO ALL'API ===
-  const submitLeaderboardScore = async () => {
-    if (!playerName.trim()) return;
-    setIsSubmitting(true);
-    localStorage.setItem("colormatch_playername", playerName);
-    
-    let uId = localStorage.getItem("colormatch_userid");
-    if (!uId) {
-      uId = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("colormatch_userid", uId);
-    }
-
-    const averageScore = parseFloat((roundScores.reduce((a, b) => a + b.score, 0) / roundScores.length).toFixed(1));
-
-    try {
-      const res = await fetch("/api/leaderboard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: playerName,
-          userId: uId,
-          score: averageScore,
-          category: activeCategory,
-          date: todayStr
-        })
-      });
-      const data = await res.json();
-      setLeaderboardData(data); // Mostriamo i risultati!
-      triggerConfetti();
-    } catch (e) {
-      console.error("Errore salvataggio:", e);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const getScoreEmoji = (score: number) => {
     if (score >= 95) return "🌟";
     if (score >= 90) return "🟢";
@@ -322,17 +305,10 @@ export default function FlagGame() {
 
   const handleShare = () => {
     const avg = roundScores.length > 0 ? (roundScores.reduce((a, b) => a + b.score, 0) / roundScores.length).toFixed(1) : "0.0";
-    const rows = roundScores.map((item, idx) => `${idx + 1}. ${getScoreEmoji(item.score)} ${item.score}% (${item.name})`).join("\n");
-    
-    // Aggiunge la classifica se l'abbiamo!
-    let rankText = "";
-    if (leaderboardData) {
-      rankText = `🏅 Posizione di oggi: ${leaderboardData.rank}°\n🔥 Battuti: ${leaderboardData.beatenPercentage}%\n\n`;
-    }
-
+    const rows = roundScores.map((item, idx) => `${idx + 1}. ${getScoreEmoji(item.score)} ${item.score}% (${item.name} - ${item.targetName})`).join("\n");
     const modeName = activeCategory === "regioni" ? "Regioni 🇮🇹" : "Serie A ⚽️";
     const header = gameMode === "daily" ? `📅 Sfida del Giorno (${todayStr.split("-").reverse().join("/")})` : `Modalità Libera (${gameMode} Round)`;
-    const shareText = `Color Match: ${modeName}\n${header}\nMedia: ${avg}% 🏆\n\n${rankText}${rows}\n\nGioca anche tu: ${window.location.origin}`;
+    const shareText = `Color Match: ${modeName}\n${header}\nMedia: ${avg}% 🏆\n\n${rows}\n\nGioca anche tu: ${window.location.origin}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText).then(() => {
@@ -354,9 +330,9 @@ export default function FlagGame() {
           <div className="text-sm text-slate-700 flex flex-col gap-2.5 leading-relaxed">
             <p>🎯 <strong>Obiettivo:</strong> Ricrea il colore dell&apos;elemento indicato.</p>
             <div className="bg-white p-3 rounded-xl border border-black/10 flex flex-col gap-1.5 text-xs">
-              <div>🎨 <strong>1° Slider:</strong> Cambia il colore base.</div>
-              <div>💧 <strong>2° Slider:</strong> Regola l&apos;intensità del colore.</div>
-              <div>☀️ <strong>3° Slider:</strong> Regola la luce da nero a bianco.</div>
+              <div>🎨 <strong>1° Slider (Tonalità):</strong> Cambia il colore base.</div>
+              <div>💧 <strong>2° Slider (Saturazione):</strong> Regola l&apos;intensità del colore.</div>
+              <div>☀️ <strong>3° Slider (Luminosità):</strong> Regola la luce da nero a bianco.</div>
             </div>
           </div>
           <button onClick={() => setShowHelp(false)} className="w-full py-3 bg-[#549EFA] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000]">Ho capito! 👍</button>
@@ -380,14 +356,14 @@ export default function FlagGame() {
             </span>
             <div className="grid grid-cols-3 gap-2">
               {[5, 10, 20].map((num) => (
-                <div key={num} className="bg-white border-[3px] border-black rounded-xl p-2.5 text-center shadow-[0_2px_0_0_#000]">
+                <div key={num} className="bg-white border-2 border-black/80 rounded-xl p-2.5 text-center shadow-[0_2px_0_0_#000]">
                   <div className="text-[11px] font-bold text-slate-500">{num} Round</div>
                   <div className="text-base font-black text-emerald-600">{highScores[num] !== null ? `${highScores[num]}%` : "-"}</div>
                 </div>
               ))}
             </div>
           </div>
-          <button onClick={() => setShowStats(false)} className="w-full py-3 bg-[#4BE38A] text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_3px_0_0_#000] mt-1">Chiudi</button>
+          <button onClick={() => setShowStats(false)} className="w-full py-3 bg-[#4BE38A] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000] mt-1">Chiudi</button>
         </div>
       </div>
     );
@@ -402,8 +378,8 @@ export default function FlagGame() {
           <div className="w-8" />
           <span className="text-xs font-black uppercase tracking-widest text-slate-500">Menu Principale</span>
           <div className="flex gap-3 text-lg text-slate-700">
-            <span onClick={() => setShowStats(true)} className="cursor-pointer active:scale-90 transition-transform hover:scale-110">📊</span>
-            <span onClick={() => setShowHelp(true)} className="cursor-pointer active:scale-90 transition-transform hover:scale-110">❓</span>
+            <span onClick={() => setShowStats(true)} className="cursor-pointer active:scale-90 transition-transform">📊</span>
+            <span onClick={() => setShowHelp(true)} className="cursor-pointer active:scale-90 transition-transform">❓</span>
           </div>
         </div>
         
@@ -433,7 +409,7 @@ export default function FlagGame() {
           <button 
             onClick={startDailyChallenge} 
             disabled={!!dailyCompleted}
-            className={`py-4 text-black font-black text-lg rounded-2xl border-[3px] border-black flex justify-between items-center px-5 transition-all
+            className={`py-4 text-black font-black text-lg rounded-2xl border-2 border-black flex justify-between items-center px-5 transition-all
               ${dailyCompleted 
                 ? "bg-[#FFE082] opacity-70 cursor-not-allowed" 
                 : "bg-[#FFCA28] shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none"
@@ -459,102 +435,31 @@ export default function FlagGame() {
             <div className="flex-1 border-t border-slate-300" />
           </div>
           
-          <button onClick={() => startGame(5)} className="py-3.5 bg-[#549EFA] text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] flex justify-between px-5 active:translate-y-1 active:shadow-none transition-all"><span>5 Round</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[5] ? `Top: ${highScores[5]}%` : "Facile"}</span></button>
-          <button onClick={() => startGame(10)} className="py-3.5 bg-[#4BE38A] text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] flex justify-between px-5 active:translate-y-1 active:shadow-none transition-all"><span>10 Round</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[10] ? `Top: ${highScores[10]}%` : "Medio"}</span></button>
-          <button onClick={() => startGame(20)} className="py-3.5 bg-[#F39C12] text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] flex justify-between px-5 active:translate-y-1 active:shadow-none transition-all"><span>20 Round</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[20] ? `Top: ${highScores[20]}%` : "Esperto"}</span></button>
+          <button onClick={() => startGame(5)} className="py-3.5 bg-[#549EFA] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] flex justify-between px-5"><span>5 Round Casuali</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[5] ? `Top: ${highScores[5]}%` : "Facile"}</span></button>
+          <button onClick={() => startGame(10)} className="py-3.5 bg-[#4BE38A] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] flex justify-between px-5"><span>10 Round Casuali</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[10] ? `Top: ${highScores[10]}%` : "Medio"}</span></button>
+          <button onClick={() => startGame(20)} className="py-3.5 bg-[#F39C12] text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] flex justify-between px-5"><span>20 Round Casuali</span><span className="text-xs bg-black/10 px-2 py-0.5 rounded-full">{highScores[20] ? `Top: ${highScores[20]}%` : "Esperto"}</span></button>
         </div>
       </div>
     );
   }
 
-  // === SCHERMATA FINALE CON LEADERBOARD ===
   if (gameState === "summary") {
     const averageScore = roundScores.length > 0 ? (roundScores.reduce((a, b) => a + b.score, 0) / roundScores.length).toFixed(1) : "0.0";
-    
     return (
-      <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none border border-stone-200 min-h-[550px]">
+      <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none border border-stone-200">
         <h2 className="text-3xl font-black text-slate-900 mb-1 text-center">Partita Finita! 🏆</h2>
-        
-        <div className="bg-white border-[3px] border-black rounded-2xl p-5 w-full flex flex-col items-center justify-center shadow-[0_4px_0_0_#000] mb-6 mt-2">
+        <div className="bg-white border-2 border-black rounded-2xl p-5 w-full flex flex-col items-center justify-center shadow-[0_4px_0_0_#000] mb-4 mt-4">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Media Finale</span>
           <div className="text-5xl font-black text-slate-900">{averageScore}%</div>
         </div>
-
-        {gameMode === "daily" ? (
-          !leaderboardData ? (
-            // Form per inserire il nome (Solo se è la daily e non ha ancora i dati)
-            <div className="w-full flex flex-col gap-4 animate-in fade-in zoom-in duration-300">
-              <p className="text-sm font-bold text-center text-slate-700 leading-tight">
-                Salva il tuo punteggio nella classifica di oggi!
-              </p>
-              <input 
-                type="text" 
-                maxLength={15}
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Il tuo nome..."
-                className="w-full border-[3px] border-black rounded-xl p-3.5 font-black text-center text-lg outline-none focus:border-[#549EFA]"
-              />
-              <button 
-                onClick={submitLeaderboardScore}
-                disabled={!playerName.trim() || isSubmitting}
-                className="w-full py-4 bg-[#4BE38A] text-black font-black text-lg rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:active:translate-y-0 transition-all"
-              >
-                {isSubmitting ? "Salvataggio..." : "Invia Punteggio 🚀"}
-              </button>
-            </div>
-          ) : (
-            // Classifica Mostrata (Dopo aver salvato)
-            <div className="w-full flex flex-col gap-4 animate-in fade-in zoom-in duration-300">
-              {/* Banner Posizione */}
-              <div className="bg-[#549EFA]/10 border-[3px] border-[#549EFA] rounded-2xl p-4 text-center">
-                <div className="text-lg font-black text-slate-900 mb-1">
-                  Sei {leaderboardData.rank}° su {leaderboardData.totalPlayers}!
-                </div>
-                {leaderboardData.beatenPercentage > 0 ? (
-                  <div className="text-sm font-bold text-[#1b3f73]">
-                    Hai battuto il {leaderboardData.beatenPercentage}% dei giocatori 🔥
-                  </div>
-                ) : (
-                  <div className="text-sm font-bold text-[#1b3f73]">Domani andrà meglio! 💪</div>
-                )}
-              </div>
-
-              {/* Box Top 3 */}
-              <div className="bg-white border-[3px] border-black rounded-2xl p-4 w-full flex flex-col gap-2 shadow-[0_4px_0_0_#000]">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center mb-1">Top 3 di Oggi</span>
-                {leaderboardData.top3.length > 0 ? leaderboardData.top3.map((player: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center bg-stone-100 p-2.5 rounded-xl border border-stone-200">
-                    <span className="flex items-center gap-2 font-black text-slate-800">
-                      <span className="text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
-                      <span className="truncate max-w-[120px]">{player.name}</span>
-                    </span>
-                    <span className="font-black text-emerald-600">{player.score}%</span>
-                  </div>
-                )) : (
-                  <div className="text-center text-sm font-bold text-slate-400 py-2">Nessun punteggio... sei il primo!</div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3 mt-2">
-                <button onClick={handleShare} className={`w-full py-3.5 text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_3px_0_0_#000] flex justify-center gap-2 active:translate-y-1 active:shadow-none transition-all ${copied ? "bg-[#4BE38A]" : "bg-[#FFD166]"}`}>{copied ? "Risultato Copiato! 📋" : "Condividi Risultato 📤"}</button>
-                <button onClick={() => setGameState("home")} className="w-full py-3 bg-white text-slate-700 font-black text-sm rounded-2xl border-[3px] border-stone-300 active:translate-y-1 active:border-stone-400 transition-all">Torna alla Home 🏠</button>
-              </div>
-            </div>
-          )
-        ) : (
-          // Modalità Libera (Niente classifica, solo share)
-          <div className="w-full flex flex-col gap-3 mt-auto">
-            <button onClick={handleShare} className={`w-full py-3.5 text-black font-black text-base rounded-2xl border-[3px] border-black shadow-[0_3px_0_0_#000] flex justify-center gap-2 active:translate-y-1 active:shadow-none transition-all ${copied ? "bg-[#4BE38A]" : "bg-[#FFD166]"}`}>{copied ? "Risultato Copiato! 📋" : "Condividi Risultato 📤"}</button>
-            <button onClick={() => setGameState("home")} className="w-full py-3 bg-[#549EFA] text-black font-black text-sm rounded-2xl border-[3px] border-black shadow-[0_3px_0_0_#000] active:translate-y-1 active:shadow-none transition-all">Torna alla Home 🏠</button>
-          </div>
-        )}
+        <button onClick={handleShare} className={`w-full py-3.5 mb-3 text-black font-black text-base rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000] flex justify-center gap-2 ${copied ? "bg-[#4BE38A]" : "bg-[#FFD166]"}`}>{copied ? "Risultato Copiato! 📋" : "Condividi Risultato 📤"}</button>
+        <button onClick={() => setGameState("home")} className="w-full py-3 bg-[#549EFA] text-black font-black text-sm rounded-2xl border-2 border-black shadow-[0_3px_0_0_#000]">Torna alla Home 🏠</button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none font-sans border border-stone-200 min-h-[600px] pb-8">
+    <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-[#F7F5EE] p-6 rounded-3xl shadow-xl select-none font-sans border border-stone-200 min-h-[550px]">
       <div className="flex justify-between items-center w-full mb-2">
         <span onClick={() => setGameState("home")} className="text-xl font-bold cursor-pointer text-slate-700">🏠</span>
         <div className="bg-stone-200/80 px-3.5 py-1 rounded-full text-xs font-black text-slate-700">{currentIdx + 1} / {rounds.length}</div>
@@ -570,7 +475,7 @@ export default function FlagGame() {
           </div>
 
           <div className="w-full flex justify-center mb-6">
-            <div ref={flagContainerRef} className={`flag-box-${componentId} w-full aspect-[4/3] rounded-xl shadow-sm overflow-hidden border-[3px] border-black/10 flex items-center justify-center bg-white p-2`} style={{ "--dynamic-color": currentColor } as React.CSSProperties}>
+            <div ref={flagContainerRef} className={`flag-box-${componentId} w-full aspect-[4/3] rounded-xl shadow-sm overflow-hidden border-2 border-black/10 flex items-center justify-center bg-white p-2`} style={{ "--dynamic-color": currentColor } as React.CSSProperties}>
               <style>{`.flag-box-${componentId} .flag-wrapper svg { width: 100% !important; height: 100% !important; object-fit: contain !important; }`}</style>
               <div className="flag-wrapper w-full h-full flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgContent }} />
             </div>
@@ -596,10 +501,7 @@ export default function FlagGame() {
             </div>
           </div>
 
-          {/* Bottone Blocca Colore stile immagine */}
-          <button onClick={handleVerify} className="w-full py-4 bg-[#FFCA28] text-black font-black text-lg rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all tracking-wide">
-            Blocca colore ✓
-          </button>
+          <button onClick={handleVerify} className="w-full py-4 bg-[#549EFA] text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all">Blocca colore ✓</button>
         </>
       ) : (
         <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-300 pt-2 flex-grow">
@@ -613,7 +515,7 @@ export default function FlagGame() {
             </div>
           </div>
 
-          <div className="w-full h-3 bg-white rounded-full border-[3px] border-black overflow-hidden mb-5">
+          <div className="w-full h-3 bg-white rounded-full border-2 border-black overflow-hidden mb-5">
             <div className="h-full bg-[#FFCA28]" style={{ width: `${result.score}%` }}></div>
           </div>
 
@@ -638,13 +540,13 @@ export default function FlagGame() {
           </div>
 
           {currentFunFact && (
-            <div className="bg-amber-50 border-[3px] border-amber-200/50 rounded-xl p-3 text-xs font-medium text-slate-800 leading-snug w-full mb-6 shadow-sm">
+            <div className="bg-amber-50 border-2 border-amber-200/50 rounded-xl p-3 text-xs text-slate-800 leading-snug w-full mb-6 shadow-sm">
               <span className="font-bold flex items-center gap-1 mb-1">💡 Lo sapevi?</span>
               {currentFunFact}
             </div>
           )}
 
-          <button onClick={nextLevel} className="w-full mt-auto py-4 bg-[#FFCA28] text-black font-black text-lg rounded-2xl border-[3px] border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2">
+          <button onClick={nextLevel} className="w-full mt-auto py-3.5 bg-[#FFCA28] text-black font-black text-lg rounded-2xl border-2 border-black shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2">
             {currentIdx < rounds.length - 1 ? "Round successivo →" : "Risultato Finale 🏁"}
           </button>
         </div>
